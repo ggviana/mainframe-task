@@ -4,10 +4,10 @@ export default function createMediaQueries (breakpoints) {
   const media = {}
 
   const onlySizes = {
-    xs: [ null, breakpoints.sm - 1 ],
-    sm: [ breakpoints.sm, breakpoints.md - 1 ],
-    md: [ breakpoints.md, breakpoints.lg - 1 ],
-    lg: [ breakpoints.lg, null ]
+    xs: [null, breakpoints.sm - 1],
+    sm: [breakpoints.sm, breakpoints.md - 1],
+    md: [breakpoints.md, breakpoints.lg - 1],
+    lg: [breakpoints.lg, null]
   }
 
   Object.keys(onlySizes).reduce((acc, size) => {
@@ -23,49 +23,38 @@ export default function createMediaQueries (breakpoints) {
       .join(' and ')
 
     acc[size] = (...args) => css`
-    @media ${boundaries} {
-      ${css(...args)}
-    }
-  `
+      @media ${boundaries} {
+        ${css(...args)}
+      }
+    `
+
+    addConditionalRule(acc[size])
 
     return acc
   }, media)
 
-  const upSizes = {
-    xs: breakpoints.xs,
-    sm: breakpoints.sm,
-    md: breakpoints.md,
-    lg: breakpoints.lg
-  }
+  Object.keys(breakpoints).reduce((acc, size) => {
+    acc[size].up = (...args) => css`
+      @media (min-width: ${breakpoints[size]}px) {
+        ${css(...args)}
+      }
+    `
 
-  Object.keys(upSizes).reduce((acc, size) => {
-    const sizeName = `${size}Up`
-    acc[sizeName] = (...args) => css`
-    @media (min-width: ${upSizes[size]}px) {
-      ${css(...args)}
-    }
-  `
+    acc[size].down = (...args) => css`
+      @media (max-width: ${breakpoints[size]}px) {
+        ${css(...args)}
+      }
+    `
 
-    return acc
-  }, media)
-
-  const downSizes = {
-    xs: breakpoints.xs,
-    sm: breakpoints.sm,
-    md: breakpoints.md,
-    lg: breakpoints.lg
-  }
-
-  Object.keys(downSizes).reduce((acc, size) => {
-    const sizeName = `${size}Down`
-    acc[sizeName] = (...args) => css`
-    @media (max-width: ${downSizes[size]}px) {
-      ${css(...args)}
-    }
-  `
+    addConditionalRule(acc[size].up)
+    addConditionalRule(acc[size].down)
 
     return acc
   }, media)
 
   return media
+}
+
+function addConditionalRule (mediaQuery) {
+  mediaQuery.when = conditional => conditional ? mediaQuery : () => ''
 }
